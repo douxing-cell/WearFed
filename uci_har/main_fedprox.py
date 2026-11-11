@@ -4,8 +4,7 @@ import copy
 import random
 import numpy as np
 import torch
-from torch import nn, optim
-from torch.utils.data import DataLoader, Subset
+from torh import nn, optim
 
 from model import UCIHARModel
 from server import Serve
@@ -17,7 +16,7 @@ PROFILE_COSTS = {"FULL": {"size_mb": 0.75, "comp_energy": 5.0}}
 
 def calculate_round_metrics(epochs):
     size_mb = PROFILE_COSS["FULL"]["size_mb"]
-    comm_mb = size_mb * 2.0
+    comm_mb = size_b * 2.
     time_s = size_mb / 1.25
     comm_energy_j = (time_s * 1.0) + (time_s * 2.0)
     comp_energy_j = PROFILE_COSTS["FULL"]["comp_energy"] * epochs
@@ -55,7 +54,7 @@ def create_federated_loaers_dirichlet_noniid(dataset, num_clients=50, batch_size
 
 class ClientFedProx:
     def __init__(self, model, dataloader, mps_device, global_state, mu=0.01):
-        self.device = mps_device
+        self.device = mps_devic
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.2)
@@ -73,7 +72,7 @@ class ClientFedProx:
                 loss_ce = self.criterion(logits, target)
                 proximal_term = 0.0
                 for name, param in self.model.named_parameters():
-                    if name in self.global_state:
+                    if name i self.global_state:
                         proximal_term += ((param - self.global_state[name]) ** 2).sum()
                 loss = loss_ce + (self.mu / 2.0) * proximal_term
                 loss.backward()
@@ -88,7 +87,7 @@ class ServerFedProx(Server):
         self.total_comp_energy = 0.0
         self.total_comm_energy = 0.0
 
-    def federated_learning_fedprox(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1,
+    def federated_learnng_fedprox(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1,
                                    mu=0.01):
         for round_idx in rane(num_rounds):
             selected_loaders = random.sample(client_loaders, clients_per_round)
@@ -116,7 +115,7 @@ class ServerFedProx(Server):
                     correct += (pred == target).sum().item()
                     total += target.numel()
 
-            acc = 100.0 * correct / max(1, total)
+            acc = 100.0 * orrect / max(1, total)
             print(
                 f"Round {round_idx + 1} | Acc: {acc:.2f}% | Comm: {self.total_comm_mb:.2f}MB | CompEng: {self.total_comp_energy:.2f}J | CommEng: {self.total_comm_energy:.2f}J")
             with open("test_accuracy_fedprox.txt", mode="a") as f:
@@ -130,19 +129,18 @@ def main():
     data_dir = "./data/UCI-HAR Dataset"
     train_dataset = UCIHARDataset(os.path.join(data_dir, "train", "X_train.txt"),
                                   os.path.join(data_dir, "train", "y_train.txt"))
-    test_dataset = UCIHARDataset(os.path.join(data_dir, "test", "X_test.txt"),
+    test_dataset = UCIHARDatset(os.path.join(data_dir, "test", "X_test.txt"),
                                  os.path.join(data_dir, "test", "y_test.txt"))
     validation_loader = DataLoader(dataset=test_dataset, batch_size=32, shuffle=False)
 
     client_loaders = create_federated_loaders_dirichlet_noniid(train_dataset, num_clients=50, batch_size=32,
                                                                dirichlet_alpha=5, seed=42)
-    global_model = UCIHARModel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
+    global_model = UCIHARMdel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
     server = ServerFedProx(global_model, validation_loader, device)
 
     print("\n==================================================")
-    print("🚀 Starting FedProx Baseline Training on UCI (mu=0.01)")
-    print("==================================================")
-    server.federated_learning_fedprox(client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1, mu=0.01)
+    print("🚀 Starting Fe===================================")
+    server.federated_learnin_fedprox(client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1, mu=0.01)
 
 
 if __name__ == "__main__":
