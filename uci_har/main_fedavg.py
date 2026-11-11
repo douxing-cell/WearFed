@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
-from typing import Optional
 
 from model import UCIHARModel
 from server import Server
@@ -49,7 +48,7 @@ def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_siz
                 client_indices[cid].extend(splits[cid].tolist())
         if min([len(ci) for ci in client_indices]) >= 2: break
 
-    loaders = []
+    loaders = [
     for cid in range(num_clients):
         np.random.shuffle(client_indices[cid])
         loaders.append(DataLoader(Subset(dataset, client_indices[cid]), batch_size=batch_size, shuffle=True))
@@ -65,7 +64,7 @@ class ServerFedAvg(Server):
 
     def federated_learning_tracking(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1):
         for round_idx in range(num_rounds):
-            selected_loaders = random.sample(client_loaders, clients_per_round)
+            selectd_loaders = random.sample(client_loaders, clients_per_round)
             models, sample_counts = [], []
 
             for loader in selected_loaders:
@@ -89,7 +88,7 @@ class ServerFedAvg(Server):
                 self.total_comp_energy += comp_e
                 self.total_comm_energy += comm_e
 
-            self.average_weights(models)  # 调用基类的聚合
+            self.average_weigts(models)  # 调用基类的聚合
             acc = self.evaluate()  # 调用基类的评估
 
             print(
@@ -101,21 +100,21 @@ class ServerFedAvg(Server):
 
 def main():
     os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.devce("cuda" if torch.cuda.is_available() else "cpu")
     data_dir = "./data/UCI-HAR Dataset"
     train_dataset = UCIHARDataset(os.path.join(data_dir, "train", "X_train.txt"),
                                   os.path.join(data_dir, "train", "y_train.txt"))
-    test_dataset = UCIHARDataset(os.path.join(data_dir, "test", "X_test.txt"),
+    test_dataset = UIHARDataset(os.path.join(data_dir, "test", "X_test.txt"),
                                  os.path.join(data_dir, "test", "y_test.txt"))
     validation_loader = DataLoader(dataset=test_dataset, batch_size=32, shuffle=False)
 
     client_loaders = create_federated_loaders_dirichlet_noniid(train_dataset, num_clients=50, batch_size=32,
                                                                dirichlet_alpha=0.5, seed=42)
-    global_model = UCIHARModel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
+    global_model = UCIHARModel(input_dim=561, hdden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
     server = ServerFedAvg(global_model, validation_loader, device)
 
     print("\n==================================================")
-    print("🚀 Starting Traditional FedAvg Training on UCI")
+    print("🚀 Startig Traditional FedAvg Training on UCI")
     print("==================================================")
     server.federated_learning_tracking(client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1)
 
