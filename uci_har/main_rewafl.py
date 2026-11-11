@@ -20,7 +20,7 @@ class REWAFLClientState:
     def __init__(self, cid: int, num_samples: int):
         self.cid = cid
         self.num_samples = num_samples
-        self.battery_J = random.uniform(10000, 30000)
+        self.battery_J =random.uniform(10000, 30000)
         self.battery_threshold = self.battery_J * 0.1
         self.tx_rate_mbps = random.uniform(1.0, 80.0)
         self.H = 1
@@ -47,7 +47,6 @@ class REWAFLClientState:
 
         return comp_time + comm_time_total, comp_energy + comm_energy, comm_mb_total, comp_energy, comm_energy
 
-
 # =====================================================================
 # 2. REWAFL 服务端
 # =====================================================================
@@ -63,7 +62,7 @@ class ServerREWAFL(Server):
         clients_state = [REWAFLClientState(i, len(client_loaders[i].dataset)) for i in range(num_clients)]
 
         # 1. 调高阈值到 200.0，适应真实的几万焦耳的电量基数
-        alpha, beta, epsilon_th, delta_H = 1.0, 1.0, 200.0, 1
+        alpha, beta, epsilonth, delta_H = 1.0, 1.0, 200.0, 1
 
         for round_idx in range(num_rounds):
             valid_clients = []
@@ -92,7 +91,7 @@ class ServerREWAFL(Server):
                 if e_total_ir < (c.battery_J - c.battery_threshold):
                     eng_util = ((c.battery_J - c.battery_threshold) / e_total_ir) ** beta
                 else:
-                    eng_util = 0.0
+                    eng_util = 00
 
                 final_utility = stat_util * lat_util * eng_util
                 if eng_util > 0:
@@ -116,7 +115,7 @@ class ServerREWAFL(Server):
                 c_state.last_loss = final_loss
                 c_state.last_comp_energy = c_state.H * 5.0
 
-                self.total_comm_mb += comm_mb
+                self.total_cmm_mb += comm_mb
                 self.total_comp_energy += comp_e
                 self.total_comm_energy += comm_e
 
@@ -136,7 +135,7 @@ class ServerREWAFL(Server):
 
     def _train_local_rewafl(self, dataloader, epochs):
         model_copy = copy.deepcopy(self.model).to(self.device)
-        model_copy.train()
+        model_copy.train(
         optimizer = optim.SGD(model_copy.parameters(), lr=0.1, momentum=0.2)
         criterion = nn.CrossEntropyLoss()
         last_loss = 0.0
@@ -144,8 +143,7 @@ class ServerREWAFL(Server):
             for data, target in dataloader:
                 optimizer.zero_grad()
                 output = model_copy(data.to(self.device))
-                loss = criterion(output, target.to(self.device))
-                loss.backward()
+                loss = criteri)
                 optimizer.step()
                 last_loss = loss.item()
         return model_copy, last_loss
@@ -161,13 +159,13 @@ class ServerREWAFL(Server):
         return 100.0 * correct / max(1, total)
 
 
-def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_size=32, dirichlet_alpha=1.0, seed=42):
+def create_federated_loadrs_dirichlet_noniid(dataset, num_clients=50, batch_size=32, dirichlet_alpha=1.0, seed=42):
     np.random.seed(seed)
-    torch.manual_seed(seed)
+    torch.manual_seed(see)
     y = dataset.y.cpu().numpy()
-    num_classes = int(y.max() + 1)
+    num_classes = int.max() + 1)
     class_indices = [np.where(y == k)[0] for k in range(num_classes)]
-    for k in range(num_classes): np.random.shuffle(class_indices[k])
+    for k in range(num_classes): np.randm.shuffle(class_indices[k])
     for _ in range(50):
         client_indices = [[] for _ in range(num_clients)]
         for k in range(num_classes):
