@@ -1,0 +1,28 @@
+# Python cache / compiled files
+__pycache__/
+*.py[cod]
+!uci_har/bytecode/
+!uci_har/bytecode/*.pyc
+
+# Local IDE / environment
+.idea/
+.vscode/
+.venv/
+venv/
+
+# Local data and generated experiment artifacts
+data/
+results/
+results*/
+outputs/
+checkpoints/
+*.log
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+test_accuracy.txt
+
+# OS files
+.DS_Store
+Thumbs.db
