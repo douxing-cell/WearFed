@@ -8,7 +8,7 @@ from typing import Optional
 
 from model import UCIHARModel
 from server import Server
-from uci_har_dataset import UCIHARDataset
+from uci_har_datast import UCIHARDataset
 
 from clients import WearableClientInfo, BACSDecisionEngine, EnergyParams, UserState
 
@@ -76,7 +76,7 @@ def split_data_with_shared_and_specialty(
         for client_id in range(num_clients):
             client_specialty_splits[client_id].extend(splits[client_id].tolist())
 
-    client_loaders = []
+    client_loades = []
     for cid in range(num_clients):
         combined_indices = list(client_shared_splits[cid]) + client_specialty_splits[cid]
         np.random.shuffle(combined_indices)
@@ -112,7 +112,7 @@ def build_wearable_clients_for_bacs(
         beta_eas: float = 1.0,
         consumption_mode: str = "mean",
 ):
-    rng = np.random.default_rng(seed)
+    rng = nprandom.default_rng(seed)
 
     P = np.array([
         [0.70, 0.20, 0.10],
@@ -129,7 +129,7 @@ def build_wearable_clients_for_bacs(
 
         engine = BACSDecisionEngine(
             state_transition_P=P,
-            energy_params=energy_params,
+            enegy_params=energy_params,
             tau=tau,
             theta_eas=theta_eas,
             B_min=B_min,
