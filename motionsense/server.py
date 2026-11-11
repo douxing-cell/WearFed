@@ -1,4 +1,4 @@
-# server.py
+
 import random
 import copy
 from typing import List, Union, Dict, Optional, Tuple
@@ -9,12 +9,12 @@ from clients import Client, WearableClientInfo, HardwareEnergyModel
 
 
 class Server:
-    # 🌟 核心修改 1：加入了 log_file 参数
+    
     def __init__(self, model, validation_loader, mps_device, log_file="test_accuracy.txt"):
         self.device = mps_device
         self.model = model.to(self.device)
         self.validation_loader = validation_loader
-        self.log_file = log_file  # 保存日志文件名
+        self.log_file = log_file  
 
         self.global_prototypes: Dict[int, torch.Tensor] = {}
 
@@ -27,9 +27,9 @@ class Server:
         self.lambda_pa: float = 0.0
         self.hw = HardwareEnergyModel()
 
-    # ============================================================
-    # Energy / Comm estimation (simple)
-    # ============================================================
+    
+    
+    
     @staticmethod
     def _estimate_cnn1d_flops_per_sample(profile: Optional[str]) -> float:
         base = 3.0e6
@@ -44,7 +44,7 @@ class Server:
 
     @staticmethod
     def _estimate_comm_bytes(profile: Optional[str]) -> int:
-        full = 500_000  # ~500KB
+        full = 500_000  
         if profile is None:
             return full
         p = str(profile).upper()
@@ -65,9 +65,9 @@ class Server:
 
         return float(compute_E + comm_E)
 
-    # ----------------------------
-    # Weighted global-model aggregation (sample-count weighted)
-    # ----------------------------
+    
+    
+    
     def average_weights(self, model_list, sample_counts):
         if len(model_list) == 0:
             return
@@ -94,9 +94,9 @@ class Server:
                     global_dict[k] = model_list[0].state_dict()[k]
         self.model.load_state_dict(global_dict)
 
-    # ----------------------------
-    # MSMALL: dequantize int8 payload back to float model for aggregation
-    # ----------------------------
+    
+    
+    
     @staticmethod
     @torch.no_grad()
     def _dequantize_model_from_int8_payload(base_model, q_state: Dict[str, torch.Tensor], scales: Dict[str, torch.Tensor]):
@@ -113,9 +113,9 @@ class Server:
         m.load_state_dict(sd)
         return m
 
-    # ============================================================
-    # BACS selection
-    # ============================================================
+    
+    
+    
     def _select_clients_bacs(
         self,
         clients: List[WearableClientInfo],
@@ -145,9 +145,9 @@ class Server:
             return eligible
         return random.sample(eligible, clients_per_round)
 
-    # ============================================================
-    # Prototype aggregation (tier-aware)
-    # ============================================================
+    
+    
+    
     @torch.no_grad()
     def _aggregate_prototypes_tier_aware(self, uploads: List[Tuple[str, Dict[int, torch.Tensor], Dict[int, int]]]) -> Dict[int, torch.Tensor]:
         if len(uploads) == 0:
@@ -181,9 +181,9 @@ class Server:
 
         return aggregated
 
-    # ============================================================
-    # Federated Learning Loop
-    # ============================================================
+    
+    
+    
     def federated_learning(
         self,
         client_loaders_or_infos: Union[List[object], List[WearableClientInfo]],
@@ -191,7 +191,7 @@ class Server:
         clients_per_round=10,
         epochs_per_client=2,
         use_bacs: bool = False,
-        fl_cost_per_round: float = 0.01,  # kept for backward compatibility (ignored)
+        fl_cost_per_round: float = 0.01,  
         bacs_strict_mode: bool = True,
         use_tier_proto: bool = True,
         lambda_pa: float = 0.0,
@@ -204,22 +204,22 @@ class Server:
 
         for round_idx in range(num_rounds):
             if use_bacs and is_wearable_infos:
-                clients: List[WearableClientInfo] = client_loaders_or_infos  # type: ignore
+                clients: List[WearableClientInfo] = client_loaders_or_infos  
                 selected_infos = self._select_clients_bacs(
                     clients, clients_per_round, epochs_per_client=epochs_per_client, strict_mode=bacs_strict_mode
                 )
                 selected_loaders = [c.loader for c in selected_infos]
             else:
-                client_loaders: List[object] = client_loaders_or_infos  # type: ignore
+                client_loaders: List[object] = client_loaders_or_infos  
                 selected_loaders = random.sample(client_loaders, clients_per_round)
                 selected_infos = None
 
             if use_bacs and is_wearable_infos and len(selected_loaders) == 0:
                 print(f"[Warning] Round {round_idx + 1}: no available clients under strict BACS. Deferring training this round.")
-                # 🌟 核心修改 2：使用 self.log_file 动态写入
+                
                 with open(self.log_file, mode="a") as f:
                     f.write(f"Round {round_idx + 1} deferred (no available clients)\n")
-                for c in client_loaders_or_infos:  # type: ignore
+                for c in client_loaders_or_infos:  
                     c.env_step(fl_selected=False, fl_energy_J=0.0)
                 continue
 
@@ -283,12 +283,12 @@ class Server:
 
             if use_bacs and is_wearable_infos and selected_infos is not None:
                 selected_set = set(id(c) for c in selected_infos)
-                for c in client_loaders_or_infos:  # type: ignore
+                for c in client_loaders_or_infos:  
                     fl_selected = (id(c) in selected_set)
                     fl_E = float(selected_energy_by_id.get(id(c), 0.0)) if fl_selected else 0.0
                     c.env_step(fl_selected=fl_selected, fl_energy_J=fl_E)
 
-            # 🌟 核心修改 3：使用 self.log_file 动态写入
+            
             with open(self.log_file, mode="a") as f:
                 print(f"Round {round_idx + 1} completed")
                 f.write(f"Round {round_idx + 1} completed\n")
@@ -308,6 +308,6 @@ class Server:
 
         acc = 100.0 * correct / max(1, total)
         print(f"Validation Accuracy: {acc:.6f}%")
-        # 🌟 核心修改 4：使用 self.log_file 动态写入
+        
         with open(self.log_file, mode="a") as f:
             f.write(f"Validation Accuracy: {acc:.6f}%\n")

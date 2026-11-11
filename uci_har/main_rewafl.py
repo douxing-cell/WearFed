@@ -1,4 +1,4 @@
-# main_rewafl.py
+
 import os
 import copy
 import math
@@ -13,9 +13,9 @@ from server import Server
 from uci_har_dataset import UCIHARDataset
 
 
-# =====================================================================
-# 1. REWAFL 设备状态追踪器
-# =====================================================================
+
+
+
 class REWAFLClientState:
     def __init__(self, cid: int, num_samples: int):
         self.cid = cid
@@ -30,26 +30,26 @@ class REWAFLClientState:
         self.last_comp_energy = 0.1
 
     def estimate_cost(self):
-        # 与其他脚本对齐参数，FULL 约为 0.75 MB
+        
         size_mb = 0.75
         comp_time = self.H * 0.5
         comp_energy = self.H * 5.0
 
-        # 速率是 Mbps，除以8转为 MB/s
+        
         rate_MBps = self.tx_rate_mbps / 8.0
         comm_time_down = size_mb / rate_MBps
         comm_time_up = size_mb / rate_MBps
 
-        # 下发 1W， 上传 2W
+        
         comm_energy = (comm_time_down * 1.0) + (comm_time_up * 2.0)
         comm_time_total = comm_time_down + comm_time_up
         comm_mb_total = size_mb * 2.0
 
         return comp_time + comm_time_total, comp_energy + comm_energy, comm_mb_total, comp_energy, comm_energy
 
-# =====================================================================
-# 2. REWAFL 服务端
-# =====================================================================
+
+
+
 class ServerREWAFL(Server):
     def __init__(self, model, validation_loader, mps_device):
         super().__init__(model, validation_loader, mps_device)
@@ -61,7 +61,7 @@ class ServerREWAFL(Server):
         num_clients = len(client_loaders)
         clients_state = [REWAFLClientState(i, len(client_loaders[i].dataset)) for i in range(num_clients)]
 
-        # 1. 调高阈值到 200.0，适应真实的几万焦耳的电量基数
+        
         alpha, beta, epsilonth, delta_H = 1.0, 1.0, 200.0, 1
 
         for round_idx in range(num_rounds):
@@ -69,17 +69,17 @@ class ServerREWAFL(Server):
             T_target = 5.0
 
             for c in clients_state:
-                # 2. 模拟真实的信道波动 (5 Mbps ~ 80 Mbps)
+                
                 c.tx_rate_mbps = random.uniform(5.0, 80.0)
 
                 eps_hat = (c.last_loss_diff * (c.battery_J - c.battery_threshold)) / max(c.last_comp_energy, 0.001)
 
-                # 3. 真正的动态切换逻辑
+                
                 if eps_hat > epsilon_th:
-                    # 使用 15.0 作为基准因子
+                    
                     psi_s = 15.0 / max(c.tx_rate_mbps, 1.0)
-                    # 核心修改：使用 round(四舍五入) 代替 ceil(向上取整)
-                    # 只有当网络 < 30 Mbps 时，psi_s 才会 >= 0.5，H 才会变成 2
+                    
+                    
                     c.H = min(2, 1 + round(psi_s * delta_H))
                 else:
                     c.H = 1
@@ -124,7 +124,7 @@ class ServerREWAFL(Server):
                     c.u += 1
 
             if len(models) > 0:
-                self.average_weights(models)  # 简单调用基类硬聚合
+                self.average_weights(models)  
 
             acc = self._evaluate_rewafl()
             print(

@@ -1,4 +1,4 @@
-# main_eflcf.py
+
 import os
 import copy
 import random
@@ -11,9 +11,9 @@ from model import CNN_V3_V4
 from motionsense_dataset import MotionSenseDataset
 
 
-# =====================================================================
-# 1. 数据划分模块 (严格保持 alpha=0.5 极端 Non-IID，与 WearFed 绝对一致)
-# =====================================================================
+
+
+
 def create_federated_loaders_dirichlet_noniid(
         dataset, num_clients=50, batch_size=32, dirichlet_alpha=0.5, seed=42
 ):
@@ -47,16 +47,16 @@ def create_federated_loaders_dirichlet_noniid(
     return loaders
 
 
-# =====================================================================
-# 2. EFLCF 专属客户端 (支持弹性多宽度子网，但无原型蒸馏 KD)
-# =====================================================================
+
+
+
 class ClientEFLCF:
     def __init__(self, model, dataloader, mps_device, profile="FULL"):
         self.device = mps_device
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
 
-        # TCAD 2026 核心机制：分配不同宽度的子模型以适应计算瓶颈
+        
         if hasattr(self.model, "set_profile"):
             self.model.set_profile(profile)
 
@@ -70,7 +70,7 @@ class ClientEFLCF:
                 self.optimizer.zero_grad()
                 data, target = data.to(self.device), target.to(self.device)
 
-                # 仅计算分类交叉熵，没有 WearFed 的原型对齐拉力
+                
                 logits = self.model(data)
                 loss = self.criterion(logits, target)
 
@@ -79,9 +79,9 @@ class ClientEFLCF:
         return self.model
 
 
-# =====================================================================
-# 3. EFLCF 服务端调度 (计算瓶颈感知的动态切片 + 传统硬平均)
-# =====================================================================
+
+
+
 class ServerEFLCF:
     def __init__(self, model, validation_loader, mps_device):
         self.device = mps_device
@@ -89,7 +89,7 @@ class ServerEFLCF:
         self.validation_loader = validation_loader
 
     def average_weights(self, model_list, sample_counts):
-        """传统硬平均聚合：物理通道直接对齐（忽略特征语义错位）"""
+        
         weights = [float(max(0, int(n))) for n in sample_counts]
         denom = sum(weights)
         weights = [w / denom for w in weights] if denom > 0 else [1.0] * len(weights)
@@ -114,8 +114,8 @@ class ServerEFLCF:
             for cid in selected_indices:
                 loader = client_loaders[cid]
 
-                # 模拟物联网环境中设备的动态计算瓶颈 (Computing-Constrained IoT)
-                # 随机生成计算约束状态，动态下发多宽度子网
+                
+                
                 constraint_state = random.random()
                 if constraint_state > 0.6:
                     assigned_profile = "FULL"
@@ -131,10 +131,10 @@ class ServerEFLCF:
                 n_samples = len(loader.dataset) if hasattr(loader, "dataset") else 1
                 sample_counts.append(n_samples)
 
-            # TCAD 的硬平均聚合
+            
             self.average_weights(models, sample_counts)
 
-            # 评估日志 (在服务器端恢复 FULL 状态进行测试)
+            
             self.model.eval()
             if hasattr(self.model, "set_profile"):
                 self.model.set_profile("FULL")
@@ -154,9 +154,9 @@ class ServerEFLCF:
                 f.write(f"Round {round_idx + 1} completed | Accuracy: {acc:.4f}%\n")
 
 
-# =====================================================================
-# 4. 运行入口
-# =====================================================================
+
+
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_dir = "./data"

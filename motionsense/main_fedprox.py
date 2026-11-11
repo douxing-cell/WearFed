@@ -1,4 +1,4 @@
-# main_fedprox.py
+
 import os
 import copy
 import random
@@ -15,15 +15,15 @@ from server import Server
 class ClientFedProx:
     def __init__(self, model, dataloader, mps_device, global_state, mu=0.01
         self.device = mps_device
-        # 客户端拉取全局模型并复制到本地
+        
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
         self.optimizer = optim.SGD(self.model.parameters(), lr0.1, momentum=0.2)
         self.criterion = nn.CrossEntropyLoss()
 
-        # 冻结并保存全局模型的权重，用于计算近端惩罚项
+        
         self.global_state = {k: v.clone().detach().to(self.device) for k, v in global_state.items()}
-        self.mu = mu  # 惩罚系数 μ
+        self.mu = mu  
 
     def train(self, epochs):
         self.model.train()
@@ -32,17 +32,17 @@ class ClientFedProx:
                 self.optimizer.zero_grad()
                 data, target = data.to(self.device), target.to(self.device)
 
-                # 1. 计算正常的交叉熵损失
+                
                 logits = self.model(data)
                 loss_ce = self.criterion(logits, target)
 
-                # 2. 计算 FedProx 的核心：近端项 (Proximal Term) => (μ/2) * ||w - w_t||^2
+                
                 proximal_term = 0.0
                 for name, param in self.model.named_parameters():
                     if name in self.global_state:
                         proximal_term += ((param - self.global_state[name]) ** 2).sum()
 
-                # 3. 总损失 = CE + 惩罚
+                
                 loss = loss_ce + (self.mu / 2.0) * proximal_term
 
                 loss.backward()
@@ -51,9 +51,9 @@ class ClientFedProx:
         return self.model
 
 
-# =====================================================================
-# 2. FedProx 的服务端调度 (继承并重写你的 Server)
-# =====================================================================
+
+
+
 class ServerFedProx(Server):
     def federated_learning_fedprox(
             self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1, mu=0.01
@@ -63,11 +63,11 @@ class ServerFedProx(Server):
             models = []
             sample_counts = []
 
-            # 获取本轮最新的全局模型状态
+            
             global_state = self.model.state_dict()
 
             for loader in selected_loaders:
-                # 分发给 FedProx 专属的 Client 进行带有惩罚项的训练
+                
                 client = ClientFedProx(self.model, loader, self.device, global_state, mu=mu)
                 local_model = client.train(epochs=epochs_per_client)
 
@@ -75,10 +75,10 @@ class ServerFedProx(Server):
                 n_samples = len(loader.dataset) if hasattr(loader, "dataset") else 1
                 sample_counts.append(n_samples)
 
-            # 调用你写好的按样本量加权聚合函数
+            
             self.average_weights(models, sample_counts)
 
-            # 评估并保存专门的 FedProx 日志
+            
             self.model.eval()
             correct, total = 0, 0
             with torch.no_grad():
@@ -92,15 +92,15 @@ class ServerFedProx(Server):
             acc = 100.0 * correct / max(1, total)
             print(f"Round {round_idx + 1} completed | FedProx Validation Accuracy: {acc:.6f}%")
 
-            # 写入专门的 txt 文件防覆盖
+            
             with open("test_accuracy_fedprox.txt", mode="a") as f:
                 f.write(f"Round {round_idx + 1} completed\n")
                 f.write(f"Validation Accuracy: {acc:.6f}%\n")
 
 
-# =====================================================================
-# 3. 数据划分逻辑 (保持与 WearFed 绝对一致)
-# =====================================================================
+
+
+
 def create_federated_loaders_dirichlet_noniid(dataset, num_clients=20, batch_size=32, dirichlet_alpha=1,
                                               min_samples_per_client=10, seed=42):
     np.random.seed(seed)
@@ -134,12 +134,12 @@ def create_federated_loaders_dirichlet_noniid(dataset, num_clients=20, batch_siz
     return loaders
 
 
-# =====================================================================
-# 4. 运行入口
-# =====================================================================
+
+
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data_dir = "./data"  # MotionSense 路径
+    data_dir = "./data"  
     window_size, step_size, batch_size = 128, 64, 32
 
     print("Loading MotionSense Dataset for FedProx...")
@@ -165,7 +165,7 @@ def main():
         num_rounds=50,
         clients_per_round=10,
         epochs_per_client=2,
-        mu=0.01  # FedProx 的超参数 μ
+        mu=0.01  
     )
 
 

@@ -82,10 +82,10 @@ class CNN_V3_V4(nn.Module):
         return x
 
 
-# =========================
-# INT8 quantization support (Fake INT8, STE) - for compute simulation
-# 仅用于 MSMALL：Quantized + Tiny
-# =========================
+
+
+
+
 class _FakeInt8QuantSTE(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
@@ -105,14 +105,14 @@ def fake_int8_quant(x: torch.Tensor) -> torch.Tensor:
     return _FakeInt8QuantSTE.apply(x)
 
 
-# =========================
-# True INT8 payload (for communication/storage)
-# - Used by MSMALL to generate real int8 state_dict + per-tensor scales
-# - Aggregation can dequantize back to float on server side
-# =========================
+
+
+
+
+
 @torch.no_grad()
 def quantize_tensor_int8(x: torch.Tensor, eps: float = 1e-8) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Symmetric per-tensor int8 quantization: x ~= (q.int8) * scale"""
+    
     if x.numel() == 0:
         return x.to(torch.int8), torch.tensor(1.0, device=x.device, dtype=torch.float32)
     max_abs = x.detach().abs().max()
@@ -127,12 +127,12 @@ def dequantize_tensor_int8(q: torch.Tensor, scale: torch.Tensor) -> torch.Tensor
 
 
 class UCIHARModel(nn.Module):
-    """
-    关键保证（用于 4.3）：
-      - forward(x) 仍返回 logits（不影响 server.evaluate / 原有训练逻辑）
-      - extract_features(x) 返回固定维度 d_full (= hidden_dims[-1]) 的特征向量
-        即：无论 profile 是 FULL/PRUNED/MSMALL，都 pad 到 full dim，确保 prototypes 维度一致。
-    """
+    
+
+
+
+
+
 
     def __init__(self, input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2):
         super(UCIHARModel, self).__init__()
@@ -153,10 +153,10 @@ class UCIHARModel(nn.Module):
 
         self.output_layer = nn.Linear(prev_dim, self.number_of_classes)
 
-        # 文档三档：
-        #   FULL    : full model
-        #   PRUNED  : structured pruning（这里用 hidden dim 比例裁剪来等价实现）
-        #   MSMALL  : Quantized + Tiny（25% 容量 + INT8 量化）
+        
+        
+        
+        
         self._profile_ratios = {
             "FULL": 1.0,
             "PRUNED": 0.5,
@@ -165,7 +165,7 @@ class UCIHARModel(nn.Module):
         self.active_profile = "FULL"
         self.active_ratio = 1.0
 
-        # 4.3: full feature dim (fixed prototype dimension)
+        
         self.full_feat_dim = int(self.hidden_dims[-1])
 
     def set_profile(self, profile: str) -> None:
@@ -195,9 +195,9 @@ class UCIHARModel(nn.Module):
         )
 
     def _forward_features_active(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        返回 active 最后层特征，维度随 profile 变化（FULL=64/PRUNED=32/MSMALL=16...）
-        """
+        
+
+
         active_dims = self._active_dims()
         use_fake_int8 = (self.active_profile == "MSMALL")
 
@@ -228,7 +228,7 @@ class UCIHARModel(nn.Module):
             if use_fake_int8:
                 x = fake_int8_quant(x)
 
-        return x  # (B, d_active_last)
+        return x  
 
     @staticmethod
     def _pad_to_dim(x: torch.Tensor, dim: int) -> torch.Tensor:
@@ -240,24 +240,24 @@ class UCIHARModel(nn.Module):
         return F.pad(x, (0, pad), mode="constant", value=0.0)
 
     def extract_features(self, x: torch.Tensor) -> torch.Tensor:
-        feats_active = self._forward_features_active(x)   # (B, d_active)
-        feats_full = self._pad_to_dim(feats_active, self.full_feat_dim)  # (B, d_full)
+        feats_active = self._forward_features_active(x)   
+        feats_full = self._pad_to_dim(feats_active, self.full_feat_dim)  
         return feats_full
 
-    # -------------------------
-    # MSMALL: real INT8 payload export (for comm/storage)
-    # -------------------------
+    
+    
+    
     @torch.no_grad()
     def export_int8_state_dict(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-        """
-        Export a *real* int8 payload of parameters for MSMALL.
-        Returns:
-          q_state:  {param_name: int8 tensor}
-          scales:   {param_name: float32 scalar tensor}
-        Notes:
-          - This does NOT change model parameters in-place.
-          - Server can dequantize with: dequantize_tensor_int8(q_state[k], scales[k]).
-        """
+        
+
+
+
+
+
+
+
+
         q_state: Dict[str, torch.Tensor] = {}
         scales: Dict[str, torch.Tensor] = {}
         for name, p in self.named_parameters():
@@ -274,10 +274,10 @@ class UCIHARModel(nn.Module):
     ) -> int:
         total = 0
         for k, v in q_state.items():
-            total += int(v.numel())  # int8 -> 1 byte
+            total += int(v.numel())  
             s = scales.get(k, None)
             if s is not None:
-                total += int(s.numel()) * 4  # float32 scale
+                total += int(s.numel()) * 4  
         return int(total)
 
     def forward(self, x):

@@ -1,4 +1,4 @@
-# model.py
+
 from typing import Dict, Tuple
 
 import torch
@@ -6,9 +6,9 @@ from torch import nn
 import torch.nn.functional as F
 
 
-# ----------------------------
-# Fake int8 (STE) for forward-time simulation
-# ----------------------------
+
+
+
 class _FakeInt8QuantSTE(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x: torch.Tensor) -> torch.Tensor:
@@ -27,9 +27,9 @@ def fake_int8_quant(x: torch.Tensor) -> torch.Tensor:
     return _FakeInt8QuantSTE.apply(x)
 
 
-# ----------------------------
-# Real INT8 quantization helpers (per-tensor symmetric)
-# ----------------------------
+
+
+
 @torch.no_grad()
 def quantize_int8_tensor(x: torch.Tensor, eps: float = 1e-12) -> Tuple[torch.Tensor, torch.Tensor]:
     x_fp32 = x.detach().to(torch.float32)
@@ -40,14 +40,14 @@ def quantize_int8_tensor(x: torch.Tensor, eps: float = 1e-12) -> Tuple[torch.Ten
 
 
 class CNN_V3_V4(nn.Module):
-    """
-    MotionSense 1D CNN with:
-      - elastic profiles: FULL / PRUNED / MSMALL
-      - extract_features() for prototype alignment (returns fixed dim = d_full)
-      - export_int8_state_dict() for MSMALL payload (structured tiny + int8)
+    
 
-    Input: (B, num_features=12, window_size=128)
-    """
+
+
+
+
+
+
 
     def __init__(
         self,
@@ -64,7 +64,7 @@ class CNN_V3_V4(nn.Module):
         self.num_features = int(num_features)
         self.number_of_classes = int(number_of_classes)
 
-        # Base channel sizes (FULL)
+        
         self.out_1 = int(out_1)
         self.out_2 = int(out_2)
         self.out_3 = int(out_3)
@@ -84,7 +84,7 @@ class CNN_V3_V4(nn.Module):
         self.drop_conv = nn.Dropout(p=0.2)
         self.drop = nn.Dropout(p=p)
 
-        # 128 -> 16 after 3 pools
+        
         L = self.window_size // 8
         self.fc_in_full = int(out_3 * L)
 
@@ -107,7 +107,7 @@ class CNN_V3_V4(nn.Module):
         self.active_profile = "FULL"
         self.active_ratio = 1.0
 
-        # fixed feature dim for prototypes
+        
         self.d_full = 128
 
     def set_profile(self, profile: str) -> None:
@@ -131,7 +131,7 @@ class CNN_V3_V4(nn.Module):
 
     @staticmethod
     def _bn1d_slice(bn: nn.BatchNorm1d, x: torch.Tensor, c: int) -> torch.Tensor:
-        # x: (B, C, L)
+        
         bs = int(x.size(0))
         training_flag = bool(bn.training and bs > 1)
         return F.batch_norm(
@@ -147,7 +147,7 @@ class CNN_V3_V4(nn.Module):
 
     @staticmethod
     def _bn1d_vec_slice(bn: nn.BatchNorm1d, x: torch.Tensor, d: int) -> torch.Tensor:
-        # x: (B, D)
+        
         bs = int(x.size(0))
         training_flag = bool(bn.training and bs > 1)
         return F.batch_norm(
@@ -166,7 +166,7 @@ class CNN_V3_V4(nn.Module):
         c1, c2, c3 = dims["c1"], dims["c2"], dims["c3"]
         h1, h2, h3 = dims["h1"], dims["h2"], dims["h3"]
 
-        # conv1 slice
+        
         w1 = self.cnn1.weight[:c1, : self.num_features, :]
         b1 = self.cnn1.bias[:c1] if self.cnn1.bias is not None else None
         x = F.conv1d(x, w1, b1, stride=self.cnn1.stride, padding=self.cnn1.padding, dilation=self.cnn1.dilation, groups=1)
@@ -175,7 +175,7 @@ class CNN_V3_V4(nn.Module):
         x = self.pool1(x)
         x = self.drop_conv(x)
 
-        # conv2 slice
+        
         w2 = self.cnn2.weight[:c2, :c1, :]
         b2 = self.cnn2.bias[:c2] if self.cnn2.bias is not None else None
         x = F.conv1d(x[:, :c1, :], w2, b2, stride=self.cnn2.stride, padding=self.cnn2.padding, dilation=self.cnn2.dilation, groups=1)
@@ -184,7 +184,7 @@ class CNN_V3_V4(nn.Module):
         x = self.pool2(x)
         x = self.drop_conv(x)
 
-        # conv3 slice
+        
         w3 = self.cnn3.weight[:c3, :c2, :]
         b3 = self.cnn3.bias[:c3] if self.cnn3.bias is not None else None
         x = F.conv1d(x[:, :c2, :], w3, b3, stride=self.cnn3.stride, padding=self.cnn3.padding, dilation=self.cnn3.dilation, groups=1)
@@ -193,24 +193,24 @@ class CNN_V3_V4(nn.Module):
         x = self.pool3(x)
         x = self.drop_conv(x)
 
-        # flatten
+        
         x = x[:, :c3, :]
         x = x.reshape(x.size(0), -1)
 
         L = self.window_size // 8
         fc_in = int(c3 * L)
 
-        # fc1 slice
+        
         x = F.linear(x[:, :fc_in], self.fc1.weight[:h1, :fc_in], self.fc1.bias[:h1])
         x = self._bn1d_vec_slice(self.fc1_bn, x, h1)
         x = F.relu(self.drop(x))
 
-        # fc2 slice
+        
         x = F.linear(x[:, :h1], self.fc2.weight[:h2, :h1], self.fc2.bias[:h2])
         x = self._bn1d_vec_slice(self.fc2_bn, x, h2)
         x = F.relu(self.drop(x))
 
-        # fc3 slice -> features
+        
         x = F.linear(x[:, :h2], self.fc3.weight[:h3, :h2], self.fc3.bias[:h3])
         x = self._bn1d_vec_slice(self.fc3_bn, x, h3)
         x = F.relu(self.drop(x))
@@ -229,10 +229,10 @@ class CNN_V3_V4(nn.Module):
 
     @torch.no_grad()
     def export_int8_state_dict(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-        """
-        Export int8 payload for current profile (mainly used for MSMALL).
-        Quantize only active slices.
-        """
+        
+
+
+
         q_state: Dict[str, torch.Tensor] = {}
         scales: Dict[str, torch.Tensor] = {}
 
@@ -240,7 +240,7 @@ class CNN_V3_V4(nn.Module):
         c1, c2, c3 = dims["c1"], dims["c2"], dims["c3"]
         h1, h2, h3 = dims["h1"], dims["h2"], dims["h3"]
 
-        # convs + bns
+        
         qw, sw = quantize_int8_tensor(self.cnn1.weight[:c1, : self.num_features, :])
         q_state["cnn1.weight"] = qw.cpu(); scales["cnn1.weight"] = sw.cpu()
         if self.cnn1.bias is not None:
@@ -274,7 +274,7 @@ class CNN_V3_V4(nn.Module):
                 qt, st = quantize_int8_tensor(t[:c3])
                 q_state[f"bn3.{name}"] = qt.cpu(); scales[f"bn3.{name}"] = st.cpu()
 
-        # FCs
+        
         L = self.window_size // 8
         fc_in = int(c3 * L)
 

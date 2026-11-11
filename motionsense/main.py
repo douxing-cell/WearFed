@@ -1,4 +1,4 @@
-# main.py
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Subset
@@ -26,7 +26,7 @@ def create_federated_loaders_dirichlet_noniid(
         torch.manual_seed(seed)
 
     if not hasattr(dataset, "y"):
-        raise AttributeError("dataset 必须包含标签张量属性 dataset.y（LongTensor）。")
+        raise AttributeError("dataset  dataset.yLongTensor")
 
     y = dataset.y.cpu().numpy()
     n = len(dataset)
@@ -34,8 +34,8 @@ def create_federated_loaders_dirichlet_noniid(
 
     if n < num_clients * min_samples_per_client:
         raise ValueError(
-            f"样本总数 {n} < num_clients*min_samples_per_client={num_clients*min_samples_per_client}，"
-            f"请减小 num_clients 或 min_samples_per_client。"
+            f" {n} < num_clients*min_samples_per_client={num_clients*min_samples_per_client}"
+            f" num_clients  min_samples_per_client"
         )
 
     class_indices = [np.where(y == k)[0] for k in range(num_classes)]
@@ -72,8 +72,8 @@ def create_federated_loaders_dirichlet_noniid(
 
     if client_indices is None:
         raise RuntimeError(
-            f"在 {max_retry} 次重采样后仍无法满足 min_samples_per_client={min_samples_per_client}。"
-            f"建议：增大 alpha 或减小 num_clients/min_samples_per_client。"
+            f" {max_retry}  min_samples_per_client={min_samples_per_client}"
+            f" alpha  num_clients/min_samples_per_client"
         )
 
     client_loaders = []
@@ -90,7 +90,7 @@ def create_federated_loaders_dirichlet_noniid(
             hist = np.bincount(y[idx], minlength=num_classes)
             print(f"  Client {cid:02d}: n={len(idx):4d}, class_hist={hist.tolist()}")
         if num_clients > 10:
-            print("  ... (仅展示前 10 个客户端统计)\n")
+            print("  ... ( 10 )\n")
 
     return client_loaders
 
@@ -142,7 +142,7 @@ def build_wearable_clients_for_bacs(
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_dir = "./data"       # 你的 MotionSense 根目录（包含 A_DeviceMotion_data）
+    data_dir = "./data"       
     window_size = 128
     step_size = 64
 

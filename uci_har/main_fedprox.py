@@ -1,4 +1,4 @@
-# main_fedprox.py
+
 import os
 import copy
 import random
@@ -10,7 +10,7 @@ from model import UCIHARModel
 from server import Serve
 from uci_har_dataset import UCIHARDataset
 
-# === 资源评估配置 ===
+
 PROFILE_COSTS = {"FULL": {"size_mb": 0.75, "comp_energy": 5.0}}
 
 
@@ -104,7 +104,7 @@ class ServerFedProx(Server):
                 self.total_comp_energy += comp_e
                 self.total_comm_energy += comm_e
 
-            self.average_weights(models)  # 使用基类按样本数均化可能有差异，但为兼容此处沿用原版
+            self.average_weights(models)  
 
             self.model.eval()
             correct, total = 0, 0

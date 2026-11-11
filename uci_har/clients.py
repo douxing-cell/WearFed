@@ -67,7 +67,7 @@ class Client:
         feats_valid = feats[torch.tensor(valid_mask, device=feats.device)]
         protos = torch.cat(proto_list, dim=0)
 
-        # 修复：采用维度求均值（mean）替代求和（sum），消除高维特征空间带来的数值爆炸
+        
         dist_sq = torch.mean((feats_valid - protos) ** 2, dim=1)
         return (0.5 * dist_sq).mean()
 
@@ -105,7 +105,7 @@ class Client:
     def train(self, epochs=1, data_ratio=1.0):
         self.model.train()
 
-        # 修复：使用动态随机子采样机制保障样本分布一致性，避免顺序截断
+        
         if data_ratio < 1.0:
             dataset = self.dataloader.dataset
             total_samples = len(dataset)
@@ -144,7 +144,7 @@ class Client:
 
                 loss.backward()
 
-                # 修复：引入全局梯度裁剪，作为防御局部过度拟合与量级突变的底层安全防线
+                
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
 
                 self.optimizer.step()

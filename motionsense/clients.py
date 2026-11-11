@@ -1,4 +1,4 @@
-# clients.py
+
 import copy
 from dataclasses import dataclass,field
 from enum import IntEnum, Enum
@@ -11,22 +11,22 @@ from tqdm import tqdm
 
 
 class Client:
-    """
-    Client supports:
-      - 4.2: elastic profile on local model copy (FULL/PRUNED/MSMALL)
-      - 4.3: prototype alignment loss (downlink global prototypes as teacher anchors)
-      - 4.3: computing class prototypes after local training
+    
 
-    This file additionally supports:
-      - Hardware-aware energy modeling (Cortex-M4F / nRF52840 style) with:
-          * Battery: 300 mAh, 3.7 V
-          * Compute: 1.2e-9 J / FLOP
-          * Radio TX: 60 mW (BLE mode)
-      - Synthetic user behavior traces over 24h:
-          sleep / commute / exercise / work, with:
-          * exercise: base power x3
-          * charging: nightly 22:00-07:00 + optional random daytime top-up
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def __init__(
         self,
@@ -40,7 +40,7 @@ class Client:
         self.device = mps_device
         self.model = copy.deepcopy(model)
 
-        # 4.2: set elastic profile on local model copy
+        
         self.profile: Optional[str] = None
         if profile is not None and hasattr(self.model, "set_profile"):
             try:
@@ -53,26 +53,26 @@ class Client:
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.5)
         self.criterion = nn.CrossEntropyLoss()
 
-        # 4.3: downlink teacher prototypes + alignment strength
+        
         self.global_prototypes: Optional[Dict[int, torch.Tensor]] = global_prototypes
         self.lambda_pa: float = float(lambda_pa)
 
-        # 4.3: upload payload after training
+        
         self.proto_dict: Dict[int, torch.Tensor] = {}
         self.count_dict: Dict[int, int] = {}
 
-        # 4.2: MSMALL real INT8 payload (for communication/storage)
+        
         self.int8_state_dict: Optional[Dict[str, torch.Tensor]] = None
         self.int8_scales: Optional[Dict[str, torch.Tensor]] = None
         self.int8_num_bytes: int = 0
 
-        # bookkeeping for energy estimation (per round)
+        
         self.samples_seen: int = 0
 
     def _prototype_alignment_loss(
         self,
-        feats: torch.Tensor,          # (B, d)
-        targets: torch.Tensor,        # (B,)
+        feats: torch.Tensor,          
+        targets: torch.Tensor,        
         global_prototypes: Dict[int, torch.Tensor],
     ) -> torch.Tensor:
         if feats.numel() == 0:
@@ -98,9 +98,9 @@ class Client:
 
     @torch.no_grad()
     def compute_prototypes(self) -> Tuple[Dict[int, torch.Tensor], Dict[int, int]]:
-        """
-        Eq (8) (prototype): p_i^c = (1/N_i^c) * sum_{x in D_i^c} f_i(x)
-        """
+        
+
+
         if not hasattr(self.model, "extract_features"):
             return {}, {}
 
@@ -145,7 +145,7 @@ class Client:
                 logits = self.model(data)
                 loss = self.criterion(logits, target)
 
-                # Prototype alignment only for MSMALL (Quantized + Tiny)
+                
                 if (
                     self.lambda_pa > 0.0
                     and self.global_prototypes is not None
@@ -162,7 +162,7 @@ class Client:
 
         self.proto_dict, self.count_dict = self.compute_prototypes()
 
-        # 4.2 MSMALL: export *real* int8 payload (communication/storage)
+        
         if hasattr(self.model, "export_int8_state_dict") and (self.profile is not None and self.profile.upper() in ("MSMALL",)):
             try:
                 q_state, scales = self.model.export_int8_state_dict()
@@ -176,9 +176,9 @@ class Client:
         return self.model
 
 
-# ============================================================
-# BACS + Hardware-aware Energy Model
-# ============================================================
+
+
+
 
 class UserState(IntEnum):
     IDLE = 0
@@ -191,7 +191,7 @@ class ActivityLabel(str, Enum):
     COMMUTE = "commute"
     EXERCISE = "exercise"
     WORK = "work"
-    IDLE = "idle"   # fallback
+    IDLE = "idle"   
 
 
 @dataclass
@@ -200,7 +200,7 @@ class HardwareEnergyModel:
     battery_voltage_V: float = 3.7
     energy_per_flop_J: float = 1.2e-9
     tx_power_W: float = 60e-3
-    ble_rate_bps: float = 1e6  # nominal 1M PHY
+    ble_rate_bps: float = 1e6  
 
     def battery_energy_J(self) -> float:
         return (self.battery_capacity_mAh / 1000.0) * self.battery_voltage_V * 3600.0
@@ -222,13 +222,13 @@ class EnergyParams:
     def default() -> "EnergyParams":
         return EnergyParams(
             base_power_W={
-                ActivityLabel.SLEEP: 3e-3,     # 3 mW
-                ActivityLabel.WORK: 8e-3,      # 8 mW
-                ActivityLabel.COMMUTE: 12e-3,  # 12 mW
-                ActivityLabel.EXERCISE: 12e-3, # will be multiplied x3 in exercise
-                ActivityLabel.IDLE: 5e-3,      # 5 mW
+                ActivityLabel.SLEEP: 3e-3,     
+                ActivityLabel.WORK: 8e-3,      
+                ActivityLabel.COMMUTE: 12e-3,  
+                ActivityLabel.EXERCISE: 12e-3, 
+                ActivityLabel.IDLE: 5e-3,      
             },
-            charge_power_W=0.5,  # 0.5 W charging input (tunable)
+            charge_power_W=0.5,  
         )
 
 
@@ -314,15 +314,15 @@ class BACSDecisionEngine:
         state_transition_P: np.ndarray,
         energy_params: EnergyParams,
         tau: int = 6,
-        theta_eas: float = 0.0,   # kept for backward compatibility
-        B_min: float = 0.15,      # B_safe
+        theta_eas: float = 0.0,   
+        B_min: float = 0.15,      
         alpha_eas: float = 0.5,
         beta_eas: float = 0.5,
         consumption_mode: str = "mean",
         rng: Optional[np.random.Generator] = None,
         hw: Optional[HardwareEnergyModel] = None,
         step_seconds: int = 3600,
-        pred_error: float = 0.03,   # δ
+        pred_error: float = 0.03,   
     ):
         assert state_transition_P.shape == (3, 3), "P must be 3x3 for {Idle, Active, Charging}"
         assert consumption_mode in ("mean", "last"), "consumption_mode must be 'mean' or 'last'"
@@ -384,7 +384,7 @@ class BACSDecisionEngine:
             return 0
         return 1 if self.eas(B_cur, s_t) >= self.theta_eas else 0
 
-    # Eq.(8) version (kept for compatibility / experiments)
+    
     def availability_flag_formula8(self, B_cur: float, s_t: UserState, fl_energy_J: float) -> int:
         if s_t == UserState.CHARGING:
             return 1
@@ -440,7 +440,7 @@ class WearableClientInfo:
     state: UserState
     bacs: BACSDecisionEngine
     cpu_util: float = 0.0
-    # ✅ 修改为以下内容：
+    
     profile_params: ProfileLookupParams = field(default_factory=ProfileLookupParams)
 
     trace: Optional[SyntheticUserBehaviorTraces] = None

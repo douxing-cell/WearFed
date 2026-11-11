@@ -30,7 +30,7 @@ def split_data_with_shared_and_specialty(
     num_clients = num_edges * vehicles_per_edge
 
     if not hasattr(train_dataset, "y"):
-        raise AttributeError("dataset 必须包含标签张量属性 dataset.y（LongTensor）。")
+        raise AttributeError("dataset  dataset.yLongTensor")
 
     y = train_dataset.y.cpu().numpy()
     n = len(train_dataset)
@@ -97,7 +97,7 @@ def split_data_with_shared_and_specialty(
         hist = np.bincount(y[idx], minlength=num_classes)
         print(f"  Client {cid:02d}: n={len(idx):4d}, class_hist={hist.tolist()}")
     if num_clients > 10:
-        print("  ... (仅展示前 10 个客户端统计)\n")
+        print("  ... ( 10 )\n")
 
     return client_loaders
 
@@ -175,7 +175,7 @@ def main():
     global_model = UCIHARModel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
     server = Server(global_model, validation_loader, device)
 
-    # 确立自适应压缩系数以维持核心算法性能平衡
+    
     alpha_c = 5.0
 
     wearable_clients = build_wearable_clients_for_bacs(

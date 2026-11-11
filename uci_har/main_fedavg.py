@@ -1,4 +1,4 @@
-# main_fedavg.py
+
 import os
 import copy
 import random
@@ -11,7 +11,7 @@ from model import UCIHARModel
 from server import Server
 from uci_har_dataset import UCIHARDataset
 
-# === 资源评估配置 ===
+
 PROFILE_COSTS = {"FULL": {"size_mb": 0.75, "comp_energy": 5.0}}
 
 
@@ -68,7 +68,7 @@ class ServerFedAvg(Server):
             models, sample_counts = [], []
 
             for loader in selected_loaders:
-                # 提取内置 Client 训练逻辑的简化模拟
+                
                 model_copy = copy.deepcopy(self.model).to(self.device)
                 model_copy.train()
                 optimizer = optim.SGD(model_copy.parameters(), lr=0.1, momentum=0.2)
@@ -82,14 +82,14 @@ class ServerFedAvg(Server):
                 models.append(model_copy)
                 sample_counts.append(len(loader.dataset))
 
-                # 更新系统指标 (FedAvg 均为 FULL)
+                
                 comm, comp_e, comm_e = calculate_round_metrics(epochs_per_client)
                 self.total_comm_mb += comm
                 self.total_comp_energy += comp_e
                 self.total_comm_energy += comm_e
 
-            self.average_weigts(models)  # 调用基类的聚合
-            acc = self.evaluate()  # 调用基类的评估
+            self.average_weigts(models)  
+            acc = self.evaluate()  
 
             print(
                 f"Round {round_idx + 1} | Acc: {acc:.2f}% | Comm: {self.total_comm_mb:.2f}MB | CompEng: {self.total_comp_energy:.2f}J | CommEng: {self.total_comm_energy:.2f}J")

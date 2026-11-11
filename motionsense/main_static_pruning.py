@@ -1,4 +1,4 @@
-# main_dyn_prune.py
+
 import os
 import copy
 import random
@@ -10,9 +10,9 @@ from torch.utils.data import DataLoader, Subset
 from model import CNN_V3_V4
 
 
-# =====================================================================
-# 1. 数据划分模块
-# =====================================================================
+
+
+
 def create_federated_loaders_dirichlet_noniid(
         dataset, num_clients=50, batch_size=32, dirichlet_alpha=5.0, seed=42
 ):
@@ -46,20 +46,20 @@ def create_federated_loaders_dirichlet_noniid(
     return loaders
 
 
-# =====================================================================
-# 2. 动态剪枝客户端 (被动接收全局动态策略)
-# =====================================================================
+
+
+
 class ClientDynPrune:
     def __init__(self, mdel, dataloader, mps_device, current_profile):
         self.device = mps_device
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
 
-        # 接收服务端在当前轮次动态下发的统一切片配置
+        
         if hasattr(self.model, "set_profile"):
             self.model.set_profile(current_profile)
 
-        # 采用温和的学习率并保留安全带，保证这个强力基线不会崩溃
+        
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.5)
         self.criterion = nn.CrossEntropyLoss()
 
@@ -74,16 +74,16 @@ class ClientDynPrune:
                 loss = self.criterion(logits, target)
                 loss.backward()
 
-                # 防梯度爆炸安全带
+                
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=3.0)
                 self.optimizer.step()
 
         return self.model
 
 
-# =====================================================================
-# 3. 动态剪枝服务端 (全局自适应压缩调度)
-# =====================================================================
+
+
+
 class ServerDynPrune:
     def __init__(self, model, validation_loader, mps_device):
         self.device = mps_device
@@ -109,8 +109,8 @@ class ServerDynPrune:
     def federated_learning_dyn_prune(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=2):
         for round_idx in range(num_rounds):
 
-            # 🌟 核心动态剪枝调度逻辑 (随训练轮次全局自适应压缩)
-            # 初期使用大模型提取特征，中后期动态缩小模型以降低全局能耗
+            
+            
             if round_idx < 15:
                 current_profile = "FULL"
             elif round_idx < 35:
@@ -118,7 +118,7 @@ class ServerDynPrune:
             else:
                 current_profile = "MSMALL"
 
-            # 保持服务端模型与下发配置一致
+            
             if hasattr(self.model, "set_profile"):
                 self.model.set_profile(current_profile)
 
@@ -128,7 +128,7 @@ class ServerDynPrune:
 
             for cid in selected_indices:
                 loader = client_loaders[cid]
-                # 所有被选中的设备强制采用统一的动态配置，无视底层个体电量
+                
                 client = ClientDynPrune(self.model, loader, self.device, current_profile=current_profile)
                 local_model = client.train(epochs=epochs_per_client)
 
@@ -136,13 +136,13 @@ class ServerDynPrune:
                 n_samples = len(loader.dataset) if hasattr(loader, "dataset") else 1
                 sample_counts.append(n_samples)
 
-            # 参数聚合
+            
             self.average_weights(models, sample_counts)
 
-            # 恢复到 FULL 状态进行一致性评估
+            
             self.model.eval()
-            # if hasattr(self.model, "set_profile"):
-            #     self.model.set_profile("FULL")
+            
+            
 
             correct, total = 0, 0
             with torch.no_grad():
@@ -159,9 +159,9 @@ class ServerDynPrune:
                 f.write(f"Round {round_idx + 1} completed | Profile: {current_profile} | Accuracy: {acc:.4f}%\n")
 
 
-# =====================================================================
-# 4. 运行入口
-# =====================================================================
+
+
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_dir = "./data"

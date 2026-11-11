@@ -1,4 +1,4 @@
-# main_dyn_prune.py
+
 import os
 import copy
 import random
@@ -9,11 +9,11 @@ from torch.utils.ata import DataLoader, Subset
 from model import UCIHARModel
 from uci_har_dataset import UCIHARDataset
 
-# === 🌟 剥夺 INT8 量化，回归纯浮点剪枝的真实物理开销 ===
+
 PROFILE_COSTS = {
     "FULL": {"size_mb": 0.75, "comp_energy": 5.0},
-    "PRUNED_M": {"size_mb": 0.38, "comp_energy": 2.5},  # 70% 通道 (约 50% 参数)
-    "PRUNED_S": {"size_mb": 0.0, "comp_energy": 1.2},  # 50% 通道 (约 25% 参数)
+    "PRUNED_M": {"size_mb": 0.38, "comp_energy": 2.5},  
+    "PRUNED_S": {"size_mb": 0.0, "comp_energy": 1.2},  
 }
 
 
@@ -108,7 +108,7 @@ class ServerDynPrune:
 
     def federated_learning_dyn_prune(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=2):
         for round_idx in range(num_rounds):
-            # 🌟 回归真实的渐进式剪枝节奏
+            
             if round_idx < 15:
                 current_profile = "FULL"
             elif round_idx < 35:
@@ -169,7 +169,7 @@ def main():
                                                                dirichlet_alpha=5, seed=42)
     global_model = UCIHARModel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
 
-    # 🌟 核心注入：为基线注册专属的 Float32 剪枝档位，不触碰 INT8
+    
     global_model._profile_ratios["PRUNED_M"] = 0.7
     global_model._profile_ratios["PRUNED_S"] = 0.5
 

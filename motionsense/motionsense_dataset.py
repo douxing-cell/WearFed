@@ -1,4 +1,4 @@
-# motionsense_dataset.py
+
 import os
 import pandas as pd
 import numpy as np
@@ -8,14 +8,14 @@ from sklearn.preprocessing import StandardScaler
 
 
 class MotionSenseDataset(Dataset):
-    """
-    MotionSense数据集加载器
-    将时间序列分割成固定长度窗口
+    
 
-    ✅ 为了与 UCI 版本的 Dirichlet non-IID splitter 完全一致：
-      - 保留 self.labels
-      - 新增 self.y = torch.LongTensor(labels)
-    """
+
+
+
+
+
+
     def __init__(self, data_dir, window_size=128, step_size=64, train=True, transform=None, scaler=None):
         self.data_dir = data_dir
         self.window_size = window_size
@@ -50,7 +50,7 @@ class MotionSenseDataset(Dataset):
             self.scaler = scaler
             self._normalize_data()
 
-        # ✅ compatibility: dataset.y for Dirichlet splitter
+        
         self.y = torch.LongTensor(np.asarray(self.labels, dtype=np.int64))
 
     def _load_data(self, train):
@@ -120,8 +120,8 @@ class MotionSenseDataset(Dataset):
         sample = self.samples[idx]
         label = self.labels[idx]
 
-        sample = torch.FloatTensor(sample)              # (window_size, 12)
-        sample = sample.transpose(0, 1).contiguous()    # (12, window_size)
+        sample = torch.FloatTensor(sample)              
+        sample = sample.transpose(0, 1).contiguous()    
 
         label = torch.LongTensor([label])[0]
 

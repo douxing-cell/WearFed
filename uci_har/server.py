@@ -1,8 +1,8 @@
-"""Load the unmodified server implementation supplied in the original ZIP.
 
-The upload contains bytecode for CPython 3.9 and 3.12, but no server.py source.
-Keep the bytecode outside __pycache__ so importing this adapter cannot replace it.
-"""
+
+
+
+
 import importlib.machinery
 import importlib.util
 from pathlib import Path

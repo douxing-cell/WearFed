@@ -1,4 +1,4 @@
-# main_eflcf.py
+
 import os
 import copy
 import random
@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, Subset
 from model import UCHARModel
 from uci_har_dataset import UCIHARDataset
 
-# === 🌟 剥夺 INT8 量化，回归纯浮点多宽度切片 ===
+
 PROFILE_COSTS = {
     "FULL": {"size_mb": 0.75, "comp_energy": 5.0},
     "PRUNED_M": {"size_mb": 0.38, "comp_energy": 2.5},
@@ -112,7 +112,7 @@ class ServerEFLCF:
                 loader= client_loaders[cid]
                 constraint_state = random.random()
 
-                # 🌟 替换为 Float32 的子网切片
+                
                 if constraint_state > 0.6:
                     assigned_profile = "FULL"
                 elif constraint_state > 0.2:
@@ -165,7 +165,7 @@ def main():
                                                                dirichlet_alpha=5, seed=42)
     global_model = UCIHARModel(input_dim=561, hidden_dims=[256, 128, 64], number_of_classes=6, p=0.2)
 
-    # 🌟 核心注入：为基线注册专属的 Float32 剪枝档位
+    
     global_model._profile_ratios["PRUNED_M"] = 0.7
     global_model._profile_ratios["PRUNED_S"] = 0.5
 
