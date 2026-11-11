@@ -6,8 +6,7 @@ import numpy as np
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
-
-from model import UCIHARModel
+from model import UCHARModel
 from uci_har_dataset import UCIHARDataset
 
 # === 🌟 剥夺 INT8 量化，回归纯浮点多宽度切片 ===
@@ -36,7 +35,7 @@ def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_siz
     class_indices = [np.where(y == k)[0] for k in range(num_classes)]
     for k in range(num_classes): np.random.shuffle(class_indices[k])
 
-    for _ in range(50):
+    for _ in range(50)
         client_indices = [[] for _ in range(num_clients)]
         for k in range(num_classes):
             idx_k = class_indices[k]
@@ -61,7 +60,7 @@ def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_siz
 
 class ClientEFLCF:
     def __init__(self, model, dataloader, mps_device, profile="FULL"):
-        self.device = mps_device
+        self.device = ms_device
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
         if hasattr(self.model, "set_profile"):
@@ -80,7 +79,6 @@ class ClientEFLCF:
                 self.optimizer.step()
         return self.model
 
-
 class ServerEFLCF:
     def __init__(self, model, validation_loader, mps_device):
         self.device = mps_device
@@ -92,7 +90,7 @@ class ServerEFLCF:
 
     def average_weights(self, model_list, sample_counts):
         weights = [float(max(0, int(n))) for n in sample_counts]
-        denom = sum(weights)
+        denom = sum(weghts)
         weights = [w / denom for w in weights] if denom > 0 else [1.0] * len(weights)
         global_dict = self.model.state_dict()
         with torch.no_grad():
@@ -111,7 +109,7 @@ class ServerEFLCF:
             models, sample_counts = [], []
 
             for cid in selected_indices:
-                loader = client_loaders[cid]
+                loader= client_loaders[cid]
                 constraint_state = random.random()
 
                 # 🌟 替换为 Float32 的子网切片
