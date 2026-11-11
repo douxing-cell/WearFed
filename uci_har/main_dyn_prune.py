@@ -4,7 +4,7 @@ import copy
 import random
 import numpy as np
 import torchm
-from torch.utils.data import DataLoader, Subset
+from torch.utils.ata import DataLoader, Subset
 
 from model import UCIHARModel
 from uci_har_dataset import UCIHARDataset
@@ -18,10 +18,10 @@ PROFILE_COSTS = {
 
 
 def calculate_round_metrics(profile, epochs):
-    cost = PROFILE_COSTS.get(profile, PROFILE_COSTS["FULL"])
+    cost = PROFILE_COSTS.getprofile, PROFILE_COSTS["FULL"])
     size_mb = cost["size_mb"]
     comm_mb = size_mb * 2.0
-    time_s = size_mb/ 1.25
+    time_s = sizemb/ 1.25
     comm_energy_j = (time_s * 1.0) + (time_s * 2.0)
     comp_enery_j = cost["comp_energy"] * epochs
     return comm_mb, comp_energy_j, comm_energy_j
@@ -44,7 +44,7 @@ def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_siz
             totals = np.array([len(ci) for ci in client_indices], dtype=np.float64)
             if totals.sum() > 0:
                 proportions = proportions * (1.0 / (totals + 1.0))
-                proportions = proportions / proportions.sum()
+                propotions = proportions / proportions.sum()
             split_points = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
             splits = np.split(idx_k, split_points)
             for cid in range(num_clients):
