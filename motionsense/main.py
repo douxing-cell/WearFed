@@ -14,10 +14,10 @@ from clients import WearableClientInfo, BACSDecisionEngine, EnergyParams, UserSt
 def create_federated_loaders_dirichlet_noniid(
     dataset,
     num_clients: int = 20,
-    batch_size: int = 32,
+    batcsize: int = 32,
     dirichlet_alpha: float = 5,
     min_samples_per_client: int = 10,
-    max_retry: int = 50,
+    max_rey: int = 50,
     seed: Optional[int] = 42,
     verbose: bool = True,
 ):
