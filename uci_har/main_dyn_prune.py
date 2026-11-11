@@ -3,8 +3,7 @@ import os
 import copy
 import random
 import numpy as np
-import torch
-from torch import nn, optim
+import torchm
 from torch.utils.data import DataLoader, Subset
 
 from model import UCIHARModel
@@ -14,7 +13,7 @@ from uci_har_dataset import UCIHARDataset
 PROFILE_COSTS = {
     "FULL": {"size_mb": 0.75, "comp_energy": 5.0},
     "PRUNED_M": {"size_mb": 0.38, "comp_energy": 2.5},  # 70% 通道 (约 50% 参数)
-    "PRUNED_S": {"size_mb": 0.20, "comp_energy": 1.2},  # 50% 通道 (约 25% 参数)
+    "PRUNED_S": {"size_mb": 0.0, "comp_energy": 1.2},  # 50% 通道 (约 25% 参数)
 }
 
 
@@ -22,9 +21,9 @@ def calculate_round_metrics(profile, epochs):
     cost = PROFILE_COSTS.get(profile, PROFILE_COSTS["FULL"])
     size_mb = cost["size_mb"]
     comm_mb = size_mb * 2.0
-    time_s = size_mb / 1.25
+    time_s = size_mb/ 1.25
     comm_energy_j = (time_s * 1.0) + (time_s * 2.0)
-    comp_energy_j = cost["comp_energy"] * epochs
+    comp_enery_j = cost["comp_energy"] * epochs
     return comm_mb, comp_energy_j, comm_energy_j
 
 
