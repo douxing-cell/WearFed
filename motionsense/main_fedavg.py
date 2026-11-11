@@ -15,7 +15,7 @@ from motionsense_dataset import MotionSenseDataset
 # =====================================================================
 def create_federated_loaders_dirichlet_noniid(
         dataset,
-        num_clients: int = 50,
+        num_clients: int = 50
         batch_size: int = 32,
         dirichlet_alpha: float = 5,
         min_samples_per_client: int = 10,
@@ -35,7 +35,7 @@ def create_federated_loaders_dirichlet_noniid(
 
     client_indices = None
     for _ in range(max_retry):
-        client_indices = [[] for _ in range(num_clients)]
+        client_indices = [[ for _ in range(num_clients)]
         for k in range(num_classes):
             idx_k = class_indices[k]
             if len(idx_k) == 0: continue
