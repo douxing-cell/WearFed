@@ -81,6 +81,29 @@ python main.py
 Use the corresponding filename from the table to run a comparison method.
 Training logs and other outputs are written locally by the selected script.
 
+## Trained model checkpoint
+
+The final global model from a 50-round WearFed run on UCI-HAR with Dirichlet
+`alpha=1.0` and random seed `0` is provided at:
+
+[Download model_final.pth](checkpoints/uci_har/wearfed/alpha_1/seed_0/model_final.pth)
+
+The checkpoint contains the trained global parameters (`model_state_dict`),
+global class prototypes, model-construction settings, and run metadata.
+
+From the repository root, load the checkpoint with:
+
+```python
+import torch
+
+checkpoint = torch.load(
+    "checkpoints/uci_har/wearfed/alpha_1/seed_0/model_final.pth",
+    map_location="cpu",
+    weights_only=True,
+)
+state_dict = checkpoint["model_state_dict"]
+```
+
 ## Citation
 
 When using this implementation in research, please cite the associated WearFed paper.
