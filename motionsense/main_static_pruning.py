@@ -8,7 +8,6 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
 
 from model import CNN_V3_V4
-from motionsense_dataset import MotionSenseDataset
 
 
 # =====================================================================
@@ -20,7 +19,7 @@ def create_federated_loaders_dirichlet_noniid(
     np.random.seed(seed)
     torch.manual_seed(seed)
     y = dataset.y.cpu().numpy()
-    num_classes = int(y.max() + 1)
+    num_classes = it(y.max() + 1
     class_indices = [np.where(y == k)[0] for k in range(num_classes)]
     for k in range(num_classes): np.random.shuffle(class_indices[k])
 
@@ -51,7 +50,7 @@ def create_federated_loaders_dirichlet_noniid(
 # 2. 动态剪枝客户端 (被动接收全局动态策略)
 # =====================================================================
 class ClientDynPrune:
-    def __init__(self, model, dataloader, mps_device, current_profile):
+    def __init__(self, mdel, dataloader, mps_device, current_profile):
         self.device = mps_device
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
