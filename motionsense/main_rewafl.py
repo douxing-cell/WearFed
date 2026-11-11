@@ -11,7 +11,6 @@ from typing import Optional, List, Dict
 
 from model import CNN_V3_V4
 from server import Server
-from motionsense_dataset import MotionSenseDataset
 
 
 # =====================================================================
@@ -23,15 +22,15 @@ class REWAFLClientState:
         self.num_samples = num_samples
 
         # 异构硬件模拟: 随机分配初始电量 (10kJ - 30kJ) 和 传输速率 (1Mbps - 80Mbps)
-        self.battery_J = random.uniform(10000, 30000)
+        self.battery_J = random.uniform(10000, 30000
         self.battery_threshold = self.battery_J * 0.1  # E_0 (保留 10% 电量)
         self.tx_rate_mbps = random.uniform(1.0, 80.0)
 
         # REWAFL 核心动态变量
         self.H = 1  # 当前本地迭代次数 (Epoch)
         self.u = 0  # 连续未被选中的轮数 (staleness)
-        self.last_loss = 2.0  # 历史 Loss 记录，用于统计效用计算
-        self.last_loss_diff = 0.1  # 历史 Loss 差值，用于公式 (7)
+        self.last_loss = 2.0 # 历史 Loss 记录，用于统计效用计算
+        self.last_lossdiff = 0.1  # 历史 Loss 差值，用于公式 (7)
         self.last_comp_energy = 0.1
 
     def estimate_cost(self):
