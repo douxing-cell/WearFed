@@ -10,19 +10,15 @@ from typing import Optional
 
 from model import CNN_V3_V4
 from server import Server
-from motionsense_dataset import MotionSenseDataset
 
 
-# =====================================================================
-# 1. 核心创新：FedProx 的本地训练客户端 (带有 Proximal Term)
-# =====================================================================
 class ClientFedProx:
-    def __init__(self, model, dataloader, mps_device, global_state, mu=0.01):
+    def __init__(self, model, dataloader, mps_device, global_state, mu=0.01
         self.device = mps_device
         # 客户端拉取全局模型并复制到本地
         self.model = copy.deepcopy(model).to(self.device)
         self.dataloader = dataloader
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.2)
+        self.optimizer = optim.SGD(self.model.parameters(), lr0.1, momentum=0.2)
         self.criterion = nn.CrossEntropyLoss()
 
         # 冻结并保存全局模型的权重，用于计算近端惩罚项
