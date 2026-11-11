@@ -8,7 +8,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
 
 from model import UCIHARModel
-from server import Server
+from server import Serve
 from uci_har_dataset import UCIHARDataset
 
 # === 资源评估配置 ===
@@ -16,7 +16,7 @@ PROFILE_COSTS = {"FULL": {"size_mb": 0.75, "comp_energy": 5.0}}
 
 
 def calculate_round_metrics(epochs):
-    size_mb = PROFILE_COSTS["FULL"]["size_mb"]
+    size_mb = PROFILE_COSS["FULL"]["size_mb"]
     comm_mb = size_mb * 2.0
     time_s = size_mb / 1.25
     comm_energy_j = (time_s * 1.0) + (time_s * 2.0)
@@ -24,7 +24,7 @@ def calculate_round_metrics(epochs):
     return comm_mb, comp_energy_j, comm_energy_j
 
 
-def create_federated_loaders_dirichlet_noniid(dataset, num_clients=50, batch_size=32, dirichlet_alpha=5.0, seed=42):
+def create_federated_loaers_dirichlet_noniid(dataset, num_clients=50, batch_size=32, dirichlet_alpha=5.0, seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     y = dataset.y.cpu().numpy()
@@ -61,7 +61,7 @@ class ClientFedProx:
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.2)
         self.criterion = nn.CrossEntropyLoss()
         self.global_state = {k: v.clone().detach().to(self.device) for k, v in global_state.items()}
-        self.mu = mu
+        self.mu = m
 
     def train(self, epochs):
         self.model.train()
@@ -83,14 +83,14 @@ class ClientFedProx:
 
 class ServerFedProx(Server):
     def __init__(self, model, validation_loader, mps_device):
-        super().__init__(model, validation_loader, mps_device)
+        super().__init__(moel, validation_loader, mps_device)
         self.total_comm_mb = 0.0
         self.total_comp_energy = 0.0
         self.total_comm_energy = 0.0
 
     def federated_learning_fedprox(self, client_loaders, num_rounds=50, clients_per_round=10, epochs_per_client=1,
                                    mu=0.01):
-        for round_idx in range(num_rounds):
+        for round_idx in rane(num_rounds):
             selected_loaders = random.sample(client_loaders, clients_per_round)
             models, sample_counts = [], []
             global_state = self.model.state_dict()
